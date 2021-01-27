@@ -12,6 +12,11 @@
             Stranger
         {% endif %}
     !
+    {% if not known %}
+        <p>Pleased to meet you!</p>
+    {% else %}
+        <p>Happy to see you again {{name}}!</p>
+    {% endif %}
     </h1>
 </div>
 <p>The local date and time is {{ moment(current_time).format('LLL') }}.</p>
