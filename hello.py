@@ -15,6 +15,7 @@ from wtforms.validators import DataRequired
 from pathlib import Path
 from datetime import datetime
 import os
+import asyncio
 
 
 basedir = Path(__file__).parent
@@ -75,13 +76,17 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username!r}>'
 
+async def send_async_email(app, msg):
+    with app.app_context():
+        mail.send(msg)
+        await asyncio.sleep(0)
 
 def send_email(to, subject, template, **kwargs):
     msg = Message(app.config['FLASKY_MAIL_SUBJECT_PREFIX'] + subject,
         sender=app.config['FLASKY_MAIL_SENDER'], recipients=[to])
     msg.body = render_template(template + '.txt', **kwargs)
     msg.html = render_template(template + '.html', **kwargs)
-    mail.send(msg)
+    send_async_email(app, msg)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -123,3 +128,4 @@ def make_shell_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
