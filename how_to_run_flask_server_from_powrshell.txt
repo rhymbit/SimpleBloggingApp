@@ -1,3 +1,0 @@
-# Use Commands
- `$env:FLASK_APP="file.py"`
- `flask run`
