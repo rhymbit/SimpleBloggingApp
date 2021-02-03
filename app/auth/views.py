@@ -1,10 +1,15 @@
 from flask import render_template, redirect, request, url_for, flash
 from flask_login import login_user, current_user
 from flask_login import logout_user, login_required
+
 from . import auth
+
 from ..models import User
+
 from .forms import LoginForm
 from .forms import RegistrationForm
+from .forms import ChangePasswordForm
+
 from .. import db
 from ..email import send_email
 
@@ -80,3 +85,18 @@ def resend_confirmation():
         'auth/email/confirm', user=current_user, token=token)
     flash('A new confirmation email has been sent to you by email.')
     return redirect(url_for('main.index'))
+
+@auth.route('/change_password', methods=['GET','POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        if current_user.verify_password(form.old_password.data):
+            current_user.password = form.password.data
+            db.session.add(current_user)
+            db.session.commit()
+            flash('You password has been updated')
+            return redirect(url_for('main.index'))
+        else:
+            flash('Invalid Password. Given current password is wrong.')
+    return render_template("auth/change_password.html", form=form)
