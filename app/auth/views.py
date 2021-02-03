@@ -9,6 +9,8 @@ from ..models import User
 from .forms import LoginForm
 from .forms import RegistrationForm
 from .forms import ChangePasswordForm
+from .forms import PasswordResetForm
+from .forms import PasswordResetRequestForm
 
 from .. import db
 from ..email import send_email
@@ -100,3 +102,45 @@ def change_password():
         else:
             flash('Invalid Password. Given current password is wrong.')
     return render_template("auth/change_password.html", form=form)
+
+
+@auth.route('/reset', methods=['GET','POST'])
+def password_reset_request():
+    if not current_user.is_anonymous:
+        return redirect(url_for('main.index'))
+    form = PasswordResetRequestForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data.lower()).first()
+        if user:
+            token = user.generate_reset_token()
+            send_email(user.email, 'Reset Your Password', 
+                'auth/email/reset_password', user=user, token=token)
+            flash('Am email with instructions to reset your password has been '
+                'sent to you')
+        else:
+            flash('Email is not registered.')
+            form.email.data = ''
+            return render_template('auth/reset_password.html', form=form)
+        return redirect(url_for('auth.login'))
+    return render_template('auth/reset_password.html', form=form)
+
+
+@auth.route('/reset/<token>', methods=['GET', 'POST'])
+def password_reset(token):
+    if not current_user.is_anonymous:
+        return redirect(url_for('main.index'))
+    form = PasswordResetForm()
+    if form.validate_on_submit():
+        if User.reset_password(token, form.password.data):
+            db.session.commit()
+            flash('Your password has been updated.')
+            return redirect(url_for('auth.login'))
+        else:
+            return redirect(url_for('main.index'))
+    return render_template('auth/reset_password.html', form=form)
+    
+
+
+
+
+        
