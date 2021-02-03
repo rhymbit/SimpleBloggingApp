@@ -50,3 +50,14 @@ class PasswordResetForm(FlaskForm):
         DataRequired(), EqualTo('password2', message='Password must match')])
     password2 = PasswordField('Confirm New Password', validators=[DataRequired()])
     submit = SubmitField('Update Password')
+
+class ChangeEmailForm(FlaskForm):
+    email = StringField('Enter new email', validators=[
+        DataRequired(), Email()
+    ])
+    password = PasswordField('Enter your password', validators=[DataRequired()])
+    submit = SubmitField('Update Email')
+
+    def validate_email(self, field):
+        if User.query.filter_by(email=field.data.lower()).first():
+            raise ValidationError('Email already registered')

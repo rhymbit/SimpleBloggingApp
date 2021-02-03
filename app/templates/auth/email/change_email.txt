@@ -1,0 +1,13 @@
+Dear {{ user.username }},
+
+To change your email click on the following link:
+
+{{ url_for('auth.change_email', token=token, _external=True) }}
+
+If you have not requested an email change simply ignore this message.
+
+Sincerely,
+
+Prateek Parashar
+
+Note: replies to this email address are not monitored.

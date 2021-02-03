@@ -11,6 +11,7 @@ from .forms import RegistrationForm
 from .forms import ChangePasswordForm
 from .forms import PasswordResetForm
 from .forms import PasswordResetRequestForm
+from .forms import ChangeEmailForm
 
 from .. import db
 from ..email import send_email
@@ -103,7 +104,6 @@ def change_password():
             flash('Invalid Password. Given current password is wrong.')
     return render_template("auth/change_password.html", form=form)
 
-
 @auth.route('/reset', methods=['GET','POST'])
 def password_reset_request():
     if not current_user.is_anonymous:
@@ -115,7 +115,7 @@ def password_reset_request():
             token = user.generate_reset_token()
             send_email(user.email, 'Reset Your Password', 
                 'auth/email/reset_password', user=user, token=token)
-            flash('Am email with instructions to reset your password has been '
+            flash('An email with instructions to reset your password has been '
                 'sent to you')
         else:
             flash('Email is not registered.')
@@ -123,7 +123,6 @@ def password_reset_request():
             return render_template('auth/reset_password.html', form=form)
         return redirect(url_for('auth.login'))
     return render_template('auth/reset_password.html', form=form)
-
 
 @auth.route('/reset/<token>', methods=['GET', 'POST'])
 def password_reset(token):
@@ -139,8 +138,35 @@ def password_reset(token):
             return redirect(url_for('main.index'))
     return render_template('auth/reset_password.html', form=form)
     
-
-
-
+@auth.route('/change_email', methods=['GET','POST'])
+@login_required
+def change_email_request():
+    form = ChangeEmailForm()
+    if form.validate_on_submit():
+        if current_user.verify_password(form.password.data):
+            new_email = form.email.data.lower()
+            token = current_user.generate_email_change_token(new_email)
+            send_email(new_email, 'Confirm Your Email Address',
+                'auth/email/change_email', user=current_user, token=token)
+            flash('An email with instructions to confirm your new email '
+                  'address has been sent to you.')
+            return redirect(url_for('main.index'))
+        else:
+            flash("Password is incorrect")
+    else:
+        flash('Invalid email or password')
+    return render_template('auth/change_email.html', form=form)
+    
+@auth.route('/change_email/<token>', methods=['GET','POST'])
+@login_required
+def change_email(token):
+    if current_user.change_email(token):
+        db.session.commit()
+        flash("You email has been updated")
+    else:
+        flash("Invalid url or the link has expired")
+    return redirect(url_for('main.index'))
+        
+    
 
         
