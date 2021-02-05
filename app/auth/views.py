@@ -72,7 +72,7 @@ def before_request():
         current_user.ping()
         if not current_user.confirmed \
             and request.endpoint \
-                and request.bluprint != 'auth' \
+                and request.blueprint != 'auth' \
                     and request.endpoint != 'static':
                     return redirect(url_for('auth.unconfirmed'))
 

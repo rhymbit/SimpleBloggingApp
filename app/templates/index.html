@@ -7,7 +7,11 @@
 <div class="page-header">
     <h1>Hello, 
         {% if current_user.is_authenticated %}
-            {{ current_user.username }}
+            {% if current_user.is_administrator() %}
+                Administrator, {{ current_user.username }}
+            {% else %}
+                {{ current_user.username }}
+            {% endif %}
         {% else %}
             Stranger
         {% endif %}!
