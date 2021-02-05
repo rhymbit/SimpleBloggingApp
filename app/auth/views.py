@@ -66,13 +66,15 @@ def confirm(token):
         flash('The confirmation link is invalid or has expired')
     return redirect(url_for('main.index'))
 
-@auth.before_app_request
+@auth.before_app_request #this handler runs before every request made from webpage
 def before_request():
-    if current_user.is_authenticated \
-        and not current_user.confirmed \
-            and request.blueprint != 'auth' \
-                and request.endpoint != 'static':
-                return redirect(url_for('auth.unconfirmed')) # /auth/unconfirmed
+    if current_user.is_authenticated:
+        current_user.ping()
+        if not current_user.confirmed \
+            and request.endpoint \
+                and request.bluprint != 'auth' \
+                    and request.endpoint != 'static':
+                    return redirect(url_for('auth.unconfirmed'))
 
 @auth.route('/unconfirmed')
 def unconfirmed():
@@ -152,9 +154,7 @@ def change_email_request():
                   'address has been sent to you.')
             return redirect(url_for('main.index'))
         else:
-            flash("Password is incorrect")
-    else:
-        flash('Invalid email or password')
+            flash("Incorrect email or password")
     return render_template('auth/change_email.html', form=form)
     
 @auth.route('/change_email/<token>', methods=['GET','POST'])
