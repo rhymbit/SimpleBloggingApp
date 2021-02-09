@@ -40,6 +40,11 @@ def user(username):
     posts = pagination.items
     return render_template('user.html', user=user, posts=posts, pagination=pagination)
 
+@main.route('/post/<int:id>')
+def post(id):
+    post = Post.query.get_or_404(id)
+    return render_template('post.html', posts=[post])
+
 @main.route('/edit-profile', methods=['GET','POST'])
 @login_required
 def edit_profile():
