@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}UserPage - {{ user.username }}{% endblock %}
+{% import "_macros.html" as macros %}
 
 {% block page_content %}
 <div class="page-header">
@@ -35,6 +36,13 @@
             </a>
             {% endif %}
         </p>
+    </div>
+</div>
+<div>
+    <h3>Posts by {{ user.username }}</h3>
+    {% include '_posts.html' %}
+    <div class="pagination">
+        {{ macros.pagination(pagination, '.user.html') }}
     </div>
 </div>
 {% endblock %}
