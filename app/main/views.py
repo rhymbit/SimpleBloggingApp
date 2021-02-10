@@ -1,4 +1,4 @@
-from flask import render_template, session, redirect, url_for, flash, abort
+from flask import render_template, session, redirect, url_for, flash, abort, make_response
 from flask import current_app
 from flask.globals import request
 from flask_login import login_required, current_user
@@ -21,13 +21,37 @@ def index():
         return redirect(url_for('.index'))
     #adding pagination support
     page = request.args.get('page', 1, type=int)
-    pagination = Post.query.order_by(Post.timestamp.desc()).paginate(
+
+    show_followed = False
+    if current_user.is_authenticated:
+        show_followed = bool(request.cookies.get('show_followed', ''))
+    if show_followed:
+        query = current_user.followed_posts
+    else:
+        query = Post.query
+
+    pagination = query.order_by(Post.timestamp.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
-        error_out=False)
+        error_out=False
+    )
     posts = pagination.items
-    
     return render_template('index.html', form=form, posts=posts,
-                            pagination=pagination)
+                show_followed=show_followed, pagination=pagination)
+
+@main.route('/all')
+@login_required
+def show_all():
+    resp = make_response(redirect(url_for('.index')))
+    resp.set_cookie('show_followed', '', max_age=30*24*60*60)
+    return resp
+
+
+@main.route('/followed')
+@login_required
+def show_followed():
+    resp = make_response(redirect(url_for('.index')))
+    resp.set_cookie('show_followed', '1', max_age=30*24*60*60)
+    return resp
 
 
 @main.route('/user/<username>')
@@ -153,7 +177,7 @@ def followers(username):
         error_out=False
     )
     follows = [{'user': item.follower, 'timestamp': item.timestamp}
-                for item in pagination.items]
+                for item in pagination.items if item.follower_id != user.id]
     return render_template('followers.html', user=user, title="Followers of",
                         endpoint=".followers", pagination=pagination, follows=follows)
 
@@ -168,7 +192,7 @@ def followed_by(username):
         page, per_page=current_app.config['FLASKY_FOLLOWERS_PER_PAGE'],
         error_out=False)
     follows = [{'user': item.followed, 'timestamp': item.timestamp}
-               for item in pagination.items]
+               for item in pagination.items if item.followed_id != user.id]
     return render_template('followers.html', user=user, title="Followed by",
                            endpoint='.followed_by', pagination=pagination,
                            follows=follows)
