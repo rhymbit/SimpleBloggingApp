@@ -1,8 +1,10 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask import current_app, request
+from flask import current_app, request, url_for
 from flask_login import UserMixin, AnonymousUserMixin
 from . import db, login_manager
+
+from .exceptions import ValidationError
 
 from datetime import datetime
 import hashlib
@@ -109,6 +111,19 @@ class User(UserMixin, db.Model):
                                 backref=db.backref('followed', lazy='joined'),
                                 lazy='dynamic',
                                 cascade='all, delete-orphan')
+
+    def to_json(self):
+        json_user = {
+            'url': url_for('api.get_user', id=self.id),
+            'username': self.username,
+            'member_since': self.member_since,
+            'last_seen': self.last_seen,
+            'posts_url': url_for('api.get_user_posts', id=self.id),
+            'followed_posts_url': url_for('api.get_user_followed_posts',
+                                            id = self.id),
+            'posts_count': self.posts.count(),                                            
+        }
+        return json_user
 
     def follow(self, user):
         if not self.is_following(user):
@@ -220,6 +235,20 @@ class User(UserMixin, db.Model):
         self.avatar_hash = self.gravatar_hash()
         db.session.add(self)
         return True
+    
+    def generate_auth_token(self, expiration):
+        s = Serializer(current_app.config['SECRET_KEY'],
+                        expires_in=expiration)
+        return s.dumps({'id': self.id}).decode('utf-8')
+
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return None
+        return User.query.get(data['id'])
 
     def gravatar_hash(self):
         return hashlib.md5(self.email.lower().encode('utf-8')).hexdigest()
@@ -260,6 +289,25 @@ class Post(db.Model):
     body_html = db.Column(db.Text)
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
 
+    def to_json(self):
+        json_post = {
+            'url': url_for('api.get_post', id=self.id),
+            'body': self.body,
+            'body_html': self.body_html,
+            'timestamp': self.timestamp,
+            'author_url': url_for('api.get_user', id=self.author_id),
+            'comments_url': url_for('api.get_post_comments', id=self.id),
+            'comments_count': self.comments.count(),
+        }
+        return json_post
+    
+    @staticmethod
+    def from_json(json_post):
+        body = json_post.get('body')
+        if body is None or body == '':
+            raise ValidationError('post does not have a body')
+        return Post(body=body)
+
     @staticmethod
     def on_changed_body(target, value, oldvalue, initiator):
         allowed_tags = ['a','abbr', 'acronym','b','blockquote','code','em',
@@ -267,6 +315,7 @@ class Post(db.Model):
         target.body_html = bleach.linkify(bleach.clean( #everything about this is on page 164 (using Adobe Reader)
             markdown(value, output_format='html'),
             tags=allowed_tags, strip=True))
+    
 
 db.event.listen(Post.body, 'set', Post.on_changed_body)
 
@@ -279,6 +328,24 @@ class Comment(db.Model):
     disabled = db.Column(db.Boolean)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+
+    def to_json(self):
+        json_post = {
+            'url': url_for('api.get_comments', id=self.id),
+            'body': self.body,
+            'body_html': self.body_html,
+            'timestamp': self.timestamp,
+            'author_url': url_for('api.get_user', id=self.author_id),
+            'post_url': url_for('api.get_posts', id=self.post_id),
+        }
+        return json_post
+    
+    @staticmethod
+    def from_json(json_comment):
+        body = json_comment.get('body')
+        if body is None or body == '':
+            raise ValidationError('Comment does not have a body')
+        return Comment(body=body)
 
     @staticmethod
     def on_changed_body(target, value, oldvalue, initiator):
