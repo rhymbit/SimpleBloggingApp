@@ -1,3 +1,5 @@
+gunicorn
+waitress
 email_validator
 Flask-SSLify
 waitress
