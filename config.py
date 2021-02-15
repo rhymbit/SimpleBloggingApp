@@ -4,7 +4,7 @@ import werkzeug
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRECT_KEY') or 'ak87a89f798afah9adv89as60a0'
+    SECRET_KEY = os.environ.get('SECRECT_KEY') or '87e6b28fbfcf43ca9fd715164f674978'
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.googlemail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in \
