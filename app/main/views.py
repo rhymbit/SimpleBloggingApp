@@ -7,7 +7,7 @@ from .. import db
 from ..models import User, Role, Permission, Post, Comment
 from ..email import send_email
 from . import main
-from .forms import EditProfileForm, EditProfileAdminForm, PostForm, CommentForm
+from .forms import EditProfileForm, EditProfileAdminForm, PostForm, CommentForm, ConfirmationForm
 from ..decorators import admin_required, permission_required
 
 @main.route('/', methods=['GET','POST'])
@@ -38,6 +38,7 @@ def index():
     return render_template('index.html', form=form, posts=posts,
                 show_followed=show_followed, pagination=pagination)
 
+
 @main.route('/all')
 @login_required
 def show_all():
@@ -63,6 +64,7 @@ def user(username):
         error_out=False)
     posts = pagination.items
     return render_template('user.html', user=user, posts=posts, pagination=pagination)
+
 
 @main.route('/post/<int:id>', methods=['GET', 'POST'])
 def post(id):
@@ -104,6 +106,27 @@ def edit(id):
         return redirect(url_for('.post', id=post.id))
     form.body.data = post.body
     return render_template('edit_post.html', form=form)
+
+
+@main.route('/delete/<int:id>', methods=['GET','POST'])
+@login_required
+def delete(id):
+    post = Post.query.get(id)
+    if current_user != post.author and \
+            not (current_user.can(Permission.ADMIN)):
+        abort(403)
+    form = ConfirmationForm()
+    if form.validate_on_submit():
+        # First deleting all the comments
+        comments = post.comments.all()
+        for comment in comments:
+            db.session.delete(comment) 
+        db.session.delete(post)
+        db.session.commit()
+        flash('The post has been deleted')
+        return redirect(url_for('.index'))
+    flash("To delete this post, password is not required. Ignore password field. Just press confirm")
+    return render_template('confirm.html', form=form, post=post, message="delete this post")
 
 @main.route('/edit-profile', methods=['GET','POST'])
 @login_required
@@ -151,6 +174,32 @@ def edit_profile_admin(id):
     form.location.data = user.location
     form.about_me.data = user.about_me
     return render_template('edit_profile.html', form=form, user=user)
+
+
+@main.route('/delete-profile', methods=['GET','POST'])
+@login_required
+def delete_profile():
+    if not current_user.confirmed:
+        flash("To delete your profile first confirm your account.")
+        return redirect(url_for('auth.unconfirmed'))
+    form = ConfirmationForm()
+    if form.validate_on_submit():
+        password = form.password.data
+        if current_user.verify_password(password):
+            posts = current_user.posts.all()
+            for post in posts:
+                comments  = post.comments.all()
+                for comment in comments:
+                    db.session.delete(comment)
+                db.session.delete(post)
+            db.session.delete(current_user)
+            db.session.commit()
+            flash("Your account has been deleted.")
+            return redirect(url_for('.index'))
+        else:
+            flash("Incorrect Password")
+    return render_template('confirm.html', form=form, message='delete your account')
+
 
 @main.route('/follow/<username>')
 @login_required

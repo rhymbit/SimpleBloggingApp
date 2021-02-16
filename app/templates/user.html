@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+
 {% block title %}UserPage - {{ user.username }}{% endblock %}
+
 {% import "_macros.html" as macros %}
 
 {% block page_content %}
@@ -25,7 +27,7 @@
             Member since {{ moment(user.member_since).format('L') }}.
             Last seen {{ moment(user.last_seen).fromNow() }}.
         </p>
-        <p>{{ user.posts.count() }} blog posts.</p>
+        <p>Total {{ user.posts.count() }} blog posts.</p>
         <p>
         {% if current_user.can(Permission.FOLLOW) and user != current_user %}
             {% if not current_user.is_following(user) %}
@@ -57,6 +59,10 @@
                 Edit Profile [Admin]
             </a>
             {% endif %}
+            {% if user == current_user or current_user.is_administrator() %}
+            <a class="btn btn-danger" href="{{ url_for('.delete_profile') }}">Delete Profile</a>
+            {% endif %}
+            
         </p>
     </div>
 </div>

@@ -267,6 +267,9 @@ class User(UserMixin, db.Model):
     def is_administrator(self):
         return self.can(Permission.ADMIN)
     
+    def is_moderator(self):
+        return self.can(Permission.MODERATE)
+    
     def __repr__(self):
         return '<User %r>' % self.username
 

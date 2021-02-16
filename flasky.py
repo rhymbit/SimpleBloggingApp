@@ -43,14 +43,3 @@ def test():
         print('HTML version file://%s/index.html' % covdir)
         COV.erase()
 
-@app.cli.command("deploy")
-def deploy():
-    """Run deployment tasks."""
-    # migrate database to latest version
-    upgrade()
-
-    # create or update user roles
-    Role.insert_roles()
-    
-    # ensure all users are following themselves
-    User.add_self_follows()

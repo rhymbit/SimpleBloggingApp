@@ -2,7 +2,7 @@
 {% import "bootstrap/wtf.html" as wtf %}
 {% import "_macros.html" as macros %}
 
-{% block title %}Home-Page{% endblock %}
+{% block title %}Prateek Blogs{% endblock %}
 
 {% block page_content %}
 <div class="page-header">
@@ -10,6 +10,8 @@
         {% if current_user.is_authenticated %}
             {% if current_user.is_administrator() %}
                 Administrator, {{ current_user.username }}
+            {% elif current_user.is_moderator() %}
+                Moderator, {{ current_user.username }}
             {% else %}
                 {{ current_user.username }}
             {% endif %}

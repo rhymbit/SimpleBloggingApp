@@ -4,6 +4,7 @@ from flask_wtf import FlaskForm
 from flask_pagedown.fields import PageDownField
 
 from wtforms import StringField, SubmitField, TextAreaField, BooleanField, SelectField
+from wtforms.fields.simple import PasswordField
 from wtforms.validators import DataRequired, Length, Regexp, ValidationError, Email
 
 from ..models import Role, User
@@ -52,4 +53,9 @@ class PostForm(FlaskForm):
 class CommentForm(FlaskForm):
     body = StringField('', validators=[DataRequired()])
     submit = SubmitField('Submit')
+
+
+class ConfirmationForm(FlaskForm):
+    password = PasswordField("Enter your password")
+    submit = SubmitField('Confirm')
 

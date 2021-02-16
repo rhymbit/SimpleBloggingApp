@@ -1,6 +1,6 @@
 from . import api
 from .. import db
-from flask import jsonify, request, g, url_for, current_app
+from flask import jsonify, request, g, url_for, current_app, redirect
 from ..models import Post, Permission
 from .decorators import permission_required
 from .errors import forbidden
@@ -51,4 +51,17 @@ def edit_post(id):
     db.session.add(post)
     db.session.commit()
     return jsonify(post.to_json())
+
+@api.route('/posts/<int:id>', methods=['PUT'])
+@permission_required(Permission.WRITE)
+def delete_post(id):
+    post = Post.query.get_or_404(id)
+    if g.current_user != post.author and \
+            not g.current_user.can(Permission.ADMIN):
+        return forbidden('Insufficient Permission')
+    db.session.delete(post)
+    db.session.commit()
+    return redirect(url_for('.get_posts'))
+
+
     
