@@ -6,18 +6,24 @@
 
 {% block page_content %}
 <div class="page-header">
-    <h1>Hello, 
-        {% if current_user.is_authenticated %}
-            {% if current_user.is_administrator() %}
-                Administrator, {{ current_user.username }}
-            {% elif current_user.is_moderator() %}
-                Moderator, {{ current_user.username }}
-            {% else %}
-                {{ current_user.username }}
-            {% endif %}
+    <h1>Hello,
+        {% if current_user.is_anonymous %}
+            Stranger! </h1>
+        <p><h4>If this is the first time you've visited this blog post, please register, blog your
+            thoughts and explore multiple functions of this blog post available to registered users.
+            Looking forward to having you with us.
+        </h4></p>
         {% else %}
-            Stranger
-        {% endif %}!
+            {% if current_user.is_authenticated %}
+                {% if current_user.is_administrator() %}
+                    Administrator, {{ current_user.username }}!
+                {% elif current_user.is_moderator() %}
+                    Moderator, {{ current_user.username }}!
+                {% else %}
+                    {{ current_user.username }}
+                {% endif %}
+            {% endif %}
+        {% endif %}
     </h1>
 </div>
 <div>
