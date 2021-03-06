@@ -60,7 +60,8 @@
             </a>
             {% endif %}
             {% if user == current_user or current_user.is_administrator() %}
-            <a class="btn btn-danger" href="{{ url_for('.delete_profile') }}">Delete Profile</a>
+            <a class="btn btn-danger" href="{{ url_for('.delete_profile', id=user.id) }}">
+                Delete Profile</a>
             {% endif %}
             
         </p>

@@ -176,23 +176,27 @@ def edit_profile_admin(id):
     return render_template('edit_profile.html', form=form, user=user)
 
 
-@main.route('/delete-profile', methods=['GET','POST'])
+@main.route('/delete-profile/<int:id>', methods=['GET','POST'])
 @login_required
-def delete_profile():
+def delete_profile(id):
     if not current_user.confirmed:
         flash("To delete your profile first confirm your account.")
         return redirect(url_for('auth.unconfirmed'))
     form = ConfirmationForm()
     if form.validate_on_submit():
         password = form.password.data
-        if current_user.verify_password(password):
-            posts = current_user.posts.all()
+        if current_user.is_administrator() or current_user.verify_password(password):
+            user = User.query.get(id)
+            posts = user.posts.all()
+            comments = user.comments.all()
             for post in posts:
                 comments  = post.comments.all()
                 for comment in comments:
                     db.session.delete(comment)
                 db.session.delete(post)
-            db.session.delete(current_user)
+            for comment in comments:
+                db.session.delete(comment)
+            db.session.delete(user)
             db.session.commit()
             flash("Your account has been deleted.")
             return redirect(url_for('.index'))
